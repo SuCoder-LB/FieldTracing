@@ -1,0 +1,6 @@
+[submodule "extern/vcglib"]
+	path = extern/vcglib
+	url = http://github.com/cnr-isti-vclab/vcglib
+[submodule "extern/xfield_tracer"]
+	path = extern/xfield_tracer
+	url = https://github.com/nicopietroni/xfield_tracer.git
