@@ -18,6 +18,7 @@ endforeach()
 
 add_executable(${CMAKE_PROJECT_NAME}
         demo.cpp
+        ft_internal.cpp
         extern/vcglib/wrap/ply/plylib.cpp
         ${file_h}
         )

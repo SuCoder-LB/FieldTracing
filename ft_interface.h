@@ -7,8 +7,8 @@
 
 #include "ft_basic_types.h"
 
-#include "tracing/tracer_interface.h"
-#include "tracing/mesh_type.h"
+class TraceMesh;
+//#include "tracing/mesh_type.h"
 
 
 

@@ -2,8 +2,16 @@
 // Created by 苏立彪 on 2023/5/18.
 //
 
+#include <string>
+#include <vector>
+#include <array>
+#include <iostream>
+
+#include "tracing/mesh_type.h"
+
 #include "ft_basic_types.h"
 #include "ft_interface.h"
+
 
 //n_nodes n_subsides n_patches  //n_nodes个点，n_subsides个分区子边，n_patches个分区
 //接下来n_nodes行，每行四个数
@@ -18,7 +26,7 @@
 //subside_id reversed  //表示分区子边id，在该分区中，该条子边是否逆置
 
 void SavePatches(const std::string &filename, field_tracing::ChartData &chart_data) {
-  FILE *fp = fopen(filename.c_str(), "r");
+  FILE *fp = fopen(filename.c_str(), "w");
   if (fp == nullptr)return;
   fprintf(fp, "%zu %zu %zu\n", chart_data.nodes.size(), chart_data.subsides.size(), chart_data.charts.size());
 
@@ -31,7 +39,7 @@ void SavePatches(const std::string &filename, field_tracing::ChartData &chart_da
     fprintf(fp, "%zd %zd %zu\n", subside.start, subside.end, subside.vertices.size() - 2);
 
     for (int j = 0; j < n_mid; ++j) {
-      auto &node = subside.vertices[j + 2];
+      auto &node = subside.vertices[j + 1];
       fprintf(fp, "%lf% lf %lf\n", node.x, node.y, node.z);
     }
   }
@@ -58,7 +66,7 @@ int LoadField(const std::string &file_name, std::vector<std::array<double, 3>> &
   fscanf(f, "%d\n", &num);
   for (int i = 0; i < num; i++) {
     double dirX, dirY, dirZ;
-    fscanf(f, "%lf %lf %lf \n", &dirX, &dirY, &dirZ);
+    fscanf(f, "%lf %lf %lf\n", &dirX, &dirY, &dirZ);
     field.push_back({dirX, dirY, dirZ});
   }
   fclose(f);
@@ -83,17 +91,17 @@ int LoadFeatures(const std::string &file_name, std::vector<std::array<int, 2>> &
 }
 
 int main() {
-  std::string mesh_file_name;
+  std::string mesh_file_name = "../gear.obj";
 
   std::cout << "Loading Remeshed M:" << mesh_file_name.c_str() << std::endl;
 
-  std::string field_file_name;
+  std::string field_file_name = "../gear.rosy";
   std::cout << "Loading Rosy Field:" << field_file_name.c_str() << std::endl;
 
-  std::string sharp_file_name;
+  std::string sharp_file_name = "../gear.feature";
   std::cout << "Loading Sharp F:" << sharp_file_name.c_str() << std::endl;
 
-  std::string chart_name;
+  std::string chart_name = "../gear.chart";
 
   TraceMesh trace_mesh;
   std::vector<std::array<double, 3>> field;
@@ -107,11 +115,11 @@ int main() {
 
   //Field load
   bool loadedField = LoadField(field_file_name, field);
-  assert(loadedField);
+  assert(!loadedField);
 
   //Sharp load
   bool loadedFeatures = LoadFeatures(sharp_file_name, features);
-  assert(loadedFeatures);
+  assert(!loadedFeatures);
 
   field_tracing::FieldTracing(trace_mesh, field, features, chart_data);
 

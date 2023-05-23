@@ -3,6 +3,7 @@
 //
 
 #include "ft_interface.h"
+#include "xfield_tracer/tracing/tracer_interface.h"
 
 namespace field_tracing {
 
@@ -17,10 +18,22 @@ ChartData computeChartData(TraceMesh &mesh, std::vector<std::vector<size_t>> &co
 
   ChartData chartData;
 
-  if (mesh.face.size() == 0)
+  if (mesh.face.empty())
     return chartData;
 
   vcg::tri::UpdateTopology<TraceMesh>::FaceFace(mesh);
+
+  std::map<size_t, size_t> node_mp;
+  for (int i = 0; i < corners.size(); ++i) {
+    for (int j = 0; j < corners[i].size(); ++j) {
+      if (node_mp.count(corners[i][j]))continue;
+      node_mp[corners[i][j]] = chartData.nodes.size();
+      chartData.nodes.emplace_back(mesh.vert[corners[i][j]].P()[0],
+                                 mesh.vert[corners[i][j]].P()[1],
+                                 mesh.vert[corners[i][j]].P()[2],
+                                 corners[i][j]);
+    }
+  }
 
   //Region growing algorithm for getting charts
   std::vector<std::vector<size_t>> faces;
@@ -37,6 +50,9 @@ ChartData computeChartData(TraceMesh &mesh, std::vector<std::vector<size_t>> &co
 
     int maxChartLabel = *labels.rbegin();
     charts.resize(maxChartLabel + 1);
+
+    faces.resize(maxChartLabel + 1);
+    border_faces.resize(maxChartLabel + 1);
 
     std::vector<bool> visited(mesh.face.size(), false);
 
@@ -325,12 +341,16 @@ ChartData computeChartData(TraceMesh &mesh, std::vector<std::vector<size_t>> &co
           //Add last vertex
           currentSubSide.vertices.push_back({mesh.vert[vCurrentId].P()[0],
                                              mesh.vert[vCurrentId].P()[1],
-                                             mesh.vert[vCurrentId].P()[2]});
+                                             mesh.vert[vCurrentId].P()[2],
+                                             vCurrentId});
 
           assert(currentSubSide.vertices.size() >= 2);
 
+          currentSubSide.start = currentSubSide.vertices[0].id;
+          currentSubSide.end = currentSubSide.vertices.back().id;
           chartData.subsides.push_back(currentSubSide);
 
+          //Pop last vertex
           reversed = false;
         } else {
           assert(currentSubSide.vertices.size() == 0);
@@ -525,15 +545,15 @@ int LoadFeature(TraceMesh &trace_mesh, std::vector<std::array<int, 2>> &features
 }
 
 int FieldTracing(TraceMesh &trace_mesh, std::vector<std::array<double, 3>> &field,
-                std::vector<std::array<int,2>>&features, ChartData &chart_data) {
+                 std::vector<std::array<int, 2>> &features, ChartData &chart_data) {
 
   trace_mesh.UpdateAttributes();
-  if (!LoadField(trace_mesh, field)) {
+  if (LoadField(trace_mesh, field) != 0) {
     return -1;
   }
   trace_mesh.UpdateAttributes();
 
-  if(!LoadFeature(trace_mesh,features)){
+  if (LoadFeature(trace_mesh, features) != 0) {
     return -2;
   }
   trace_mesh.UpdateAttributes();
